@@ -8,6 +8,9 @@ import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 import br.edu.ifsp.agendafirebase.R;
 import br.edu.ifsp.agendafirebase.model.Contato;
 
@@ -42,12 +45,13 @@ public class CadastroActivity extends AppCompatActivity {
 
             // Código para gravar contato no Firebase
 
+            DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
+            databaseReference.push().setValue(c);
+
 
             Toast.makeText(getApplicationContext(),"Contato inserido",Toast.LENGTH_LONG).show();
 
             finish();
-
-
         }
 
         return super.onOptionsItemSelected(item);

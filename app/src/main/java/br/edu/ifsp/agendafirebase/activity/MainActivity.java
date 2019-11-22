@@ -10,7 +10,11 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.os.Bundle;
 
+import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,10 +32,15 @@ import android.widget.Toast;
 
 import br.edu.ifsp.agendafirebase.R;
 import br.edu.ifsp.agendafirebase.data.ContatoAdapter;
+import br.edu.ifsp.agendafirebase.model.Contato;
 
 public class MainActivity extends AppCompatActivity {
 
     ContatoAdapter adapter;
+    DatabaseReference databaseReference;
+    Query queryFirebase;
+    FirebaseRecyclerOptions<Contato> options;
+    RecyclerView recyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,30 +49,35 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-
-
-        RecyclerView recyclerView = findViewById(R.id.recyclerview);
+        recyclerView = findViewById(R.id.recyclerview);
         RecyclerView.LayoutManager layout = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layout);
 
        // Código para carregar todos os contatos
 
-       //
+        databaseReference = FirebaseDatabase.getInstance().getReference();
+        queryFirebase = databaseReference.orderByChild("nome");
+        options = new FirebaseRecyclerOptions.Builder<Contato>()
+                                            .setQuery(queryFirebase, Contato.class)
+                                            .build();
+        adapter = new ContatoAdapter(options);
 
-       // recyclerView.setAdapter(adapter);
+        recyclerView.setAdapter(adapter);
 
-       /* adapter.setClickListener(new ContatoAdapter.ItemClickListener() {
+        adapter.startListening();
+
+       adapter.setClickListener(new ContatoAdapter.ItemClickListener() {
             @Override
             public void onItemClick(int position) {
                 Intent i = new Intent(getApplicationContext(), DetalheActivity.class);
 
                 // Código para obter o ID do contato selecionado
-                // i.putExtra("contato",);
+                i.putExtra("contato",adapter.getRef(position).getKey());
 
                 startActivityForResult(i,2);
 
             }
-        });*/
+        });
 
         ItemTouchHelper.SimpleCallback simpleCallback = new ItemTouchHelper.SimpleCallback(0,ItemTouchHelper.RIGHT) {
             @Override
@@ -75,7 +89,8 @@ public class MainActivity extends AppCompatActivity {
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
 
                   // Código para excluir o contato usando swipe
-
+                  int position = viewHolder.getAdapterPosition();
+                  databaseReference.child(adapter.getRef(position).getKey()).removeValue();
 
                   Toast.makeText(getApplicationContext(),"Contato apagado", Toast.LENGTH_LONG).show();
 
@@ -148,7 +163,13 @@ public class MainActivity extends AppCompatActivity {
             public boolean onQueryTextChange(String query) {
 
                 //  código para filtrar os contatos
-
+                queryFirebase = databaseReference.orderByChild("nome")
+                            .startAt(query).endAt(query + "\uf8ff");
+                options = new FirebaseRecyclerOptions.Builder<Contato>()
+                            .setQuery(queryFirebase,Contato.class).build();
+                adapter = new ContatoAdapter(options);
+                recyclerView.setAdapter(adapter);
+                adapter.startListening();
 
                 return true;
             }
